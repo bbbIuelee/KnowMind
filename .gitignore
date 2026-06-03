@@ -1,0 +1,33 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 本地配置
+.env
+.env.*
+!.env.example
+
+# IDE 配置
+.idea/
+.vscode/
+
+# 运行数据
+data/bm25_state.json
+data/documents/*
+!data/documents/.gitkeep
+volumes/
+
+# 日志和临时文件
+*.log
+*.tmp
+
+# 本地规划文档，不上传 GitHub
+docs/
