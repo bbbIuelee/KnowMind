@@ -12,9 +12,10 @@ if str(_ROOT) not in sys.path:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.router import router
-from backend.env import load_env
+from backend.env import PROJECT_ROOT, load_env
 
 
 load_env()
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router)
+    app.mount("/", StaticFiles(directory=PROJECT_ROOT / "frontend", html=True), name="frontend")
     return app
 
 
