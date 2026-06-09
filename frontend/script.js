@@ -1,6 +1,7 @@
 const chatForm = document.querySelector("#chatForm");
 const messageInput = document.querySelector("#messageInput");
 const messageList = document.querySelector("#messageList");
+const sendButton = document.querySelector("#sendButton");
 
 /**
  * 创建单条聊天消息节点。
@@ -28,13 +29,38 @@ function appendMessage(role, content) {
     const messageElement = createMessageElement(role, content);
     messageList.append(messageElement);
     messageList.scrollTop = messageList.scrollHeight;
+    return messageElement;
 }
 
 /**
- * 根据用户输入生成 Day 03 本地假回复。
+ * 更新已有消息气泡内容。
  */
-function buildLocalReply(message) {
-    return `已收到：${message}。Day 04 会把这里替换为后端 /chat 接口调用。`;
+function updateMessageContent(messageElement, content) {
+    const bubbleElement = messageElement.querySelector(".bubble");
+    bubbleElement.textContent = content;
+    messageList.scrollTop = messageList.scrollHeight;
+}
+
+/**
+ * 调用后端非流式聊天接口。
+ */
+async function requestChatReply(message) {
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            message,
+            session_id: null,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`聊天接口请求失败：${response.status}`);
+    }
+
+    return response.json();
 }
 
 /**
@@ -48,7 +74,7 @@ function resizeInput() {
 /**
  * 处理聊天表单提交。
  */
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
 
     const message = messageInput.value.trim();
@@ -59,10 +85,19 @@ function handleSubmit(event) {
     appendMessage("user", message);
     messageInput.value = "";
     resizeInput();
+    sendButton.disabled = true;
 
-    window.setTimeout(() => {
-        appendMessage("ai", buildLocalReply(message));
-    }, 200);
+    const aiMessageElement = appendMessage("ai", "正在请求 KnowMind 后端...");
+
+    try {
+        const data = await requestChatReply(message);
+        updateMessageContent(aiMessageElement, data.response || "后端没有返回回答内容。");
+    } catch (error) {
+        updateMessageContent(aiMessageElement, error.message);
+    } finally {
+        sendButton.disabled = false;
+        messageInput.focus();
+    }
 }
 
 chatForm.addEventListener("submit", handleSubmit);
