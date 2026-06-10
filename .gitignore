@@ -9,6 +9,7 @@ __pycache__/
 # 虚拟环境
 .venv/
 venv/
+.uv-cache/
 
 # 本地配置
 .env
