@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.api.router import router
 from backend.env import PROJECT_ROOT, load_env
+from backend.infra.database import init_db
 
 
 load_env()
@@ -24,6 +25,11 @@ load_env()
 def create_app() -> FastAPI:
     """创建并配置 KnowMind FastAPI 应用实例。"""
     app = FastAPI(title="KnowMind API", version="0.1.0")
+
+    @app.on_event("startup")
+    async def startup_init_db() -> None:
+        """应用启动时初始化数据库表。"""
+        init_db()
 
     app.add_middleware(
         CORSMiddleware,
