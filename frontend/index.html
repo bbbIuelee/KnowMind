@@ -14,14 +14,37 @@
                     <p class="eyebrow">KnowMind</p>
                     <h1>知识库问答助手</h1>
                 </div>
-                <span class="status-pill">本地演示</span>
+                <span id="authStatus" class="status-pill">未登录</span>
             </header>
+
+            <section class="auth-panel" aria-label="账号登录">
+                <div class="auth-fields">
+                    <label class="visually-hidden" for="usernameInput">用户名</label>
+                    <input id="usernameInput" type="text" placeholder="用户名" autocomplete="username">
+                    <label class="visually-hidden" for="passwordInput">密码</label>
+                    <input id="passwordInput" type="password" placeholder="密码" autocomplete="current-password">
+                </div>
+                <div class="auth-actions">
+                    <button id="loginButton" type="button">登录</button>
+                    <button id="registerButton" type="button">注册</button>
+                    <button id="logoutButton" type="button" hidden>退出</button>
+                </div>
+                <p id="authMessage" class="auth-message">请先登录，再开始聊天。</p>
+            </section>
+
+            <section class="session-toolbar" aria-label="会话选择">
+                <label class="visually-hidden" for="sessionSelect">历史会话</label>
+                <select id="sessionSelect">
+                    <option value="">新会话</option>
+                </select>
+                <button id="newSessionButton" type="button">新会话</button>
+            </section>
 
             <section id="messageList" class="message-list" aria-live="polite">
                 <article class="message message-ai">
                     <div class="avatar">K</div>
                     <div class="bubble">
-                        你好，我是 KnowMind。当前是 Day 03 的前端本地聊天闭环。
+                        你好，我是 KnowMind。请登录后开始新的知识问答会话。
                     </div>
                 </article>
             </section>
