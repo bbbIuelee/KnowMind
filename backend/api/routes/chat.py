@@ -4,18 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.chat.storage import (
-    get_session_title,
+    get_session_detail_payload,
     get_user_session,
-    list_session_messages,
-    list_user_sessions,
+    list_user_session_summaries,
     save_chat_turn,
 )
 from backend.chat.runtime import ChatConfigError, ChatRuntimeError, chat_with_model
-from backend.db.models import ChatMessage, ChatSession, User
+from backend.db.models import User
 from backend.infra.auth import get_current_user
 from backend.infra.database import get_db_session
 from backend.schemas.chat import (
-    ChatMessageResponse,
     ChatRequest,
     ChatResponse,
     ChatSessionDetailResponse,
@@ -24,26 +22,6 @@ from backend.schemas.chat import (
 
 
 router = APIRouter(tags=["chat"])
-
-
-def build_message_response(message: ChatMessage) -> ChatMessageResponse:
-    """将数据库消息模型转换为接口消息响应模型。"""
-    return ChatMessageResponse(
-        message_type=message.message_type,
-        content=message.content,
-        timestamp=message.timestamp,
-        rag_trace=message.rag_trace,
-    )
-
-
-def build_session_summary(session: ChatSession) -> ChatSessionSummaryResponse:
-    """将数据库会话模型转换为接口会话摘要响应模型。"""
-    return ChatSessionSummaryResponse(
-        session_id=session.session_id,
-        title=get_session_title(session),
-        created_at=session.created_at,
-        updated_at=session.updated_at,
-    )
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -85,8 +63,8 @@ def get_sessions(
     db_session: Session = Depends(get_db_session),
 ) -> list[ChatSessionSummaryResponse]:
     """返回当前用户可见的会话列表。"""
-    sessions = list_user_sessions(db_session, current_user)
-    return [build_session_summary(session) for session in sessions]
+    sessions = list_user_session_summaries(db_session, current_user)
+    return [ChatSessionSummaryResponse(**session) for session in sessions]
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionDetailResponse)
@@ -96,16 +74,8 @@ def get_session_detail(
     db_session: Session = Depends(get_db_session),
 ) -> ChatSessionDetailResponse:
     """返回当前用户拥有的指定会话详情。"""
-    session = get_user_session(db_session, current_user, session_id.strip())
-    if not session:
+    detail = get_session_detail_payload(db_session, current_user, session_id)
+    if not detail:
         raise HTTPException(status_code=404, detail="会话不存在")
 
-    messages = list_session_messages(db_session, session)
-    summary = build_session_summary(session)
-    return ChatSessionDetailResponse(
-        session_id=summary.session_id,
-        title=summary.title,
-        created_at=summary.created_at,
-        updated_at=summary.updated_at,
-        messages=[build_message_response(message) for message in messages],
-    )
+    return ChatSessionDetailResponse(**detail)
