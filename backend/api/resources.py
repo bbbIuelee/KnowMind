@@ -15,7 +15,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 UPLOAD_DIR = DATA_DIR / "documents"
 UPLOAD_CHUNK_SIZE = 1024 * 1024
 MAX_UPLOAD_BYTES = int(os.getenv("DOCUMENT_UPLOAD_MAX_BYTES", str(20 * 1024 * 1024)))
-SUPPORTED_DOCUMENT_SUFFIXES = {".pdf"}
+SUPPORTED_DOCUMENT_SUFFIXES = {".pdf", ".docx", ".xlsx"}
 
 
 class UploadValidationError(ValueError):
@@ -46,7 +46,7 @@ def normalize_upload_filename(raw_filename: str | None) -> str:
     if not safe_filename or safe_filename.startswith("."):
         raise UploadValidationError("文件名不合法")
     if not is_supported_document(safe_filename):
-        raise UploadValidationError("当前阶段仅支持 PDF 文件")
+        raise UploadValidationError("当前阶段仅支持 PDF、DOCX 和 XLSX 文件")
     return safe_filename
 
 
