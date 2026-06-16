@@ -10,13 +10,14 @@ from backend.api.resources import (
     save_upload_file,
 )
 from backend.db.models import User
-from backend.indexing import DocumentLoader
+from backend.indexing import DocumentLoader, ParentChunkStore
 from backend.infra.auth import require_admin
 from backend.schemas.documents import DocumentUploadResponse
 
 
 router = APIRouter(tags=["documents"])
 document_loader = DocumentLoader()
+parent_chunk_store = ParentChunkStore()
 
 
 @router.post("/documents/upload", response_model=DocumentUploadResponse)
@@ -31,6 +32,8 @@ async def upload_document(
         target_path = build_upload_path(filename)
         await save_upload_file(file, target_path)
         chunks = document_loader.load_document(target_path, filename)
+        parent_chunk_store.delete_by_filename(filename)
+        parent_chunk_store.upsert_documents(chunks)
     except UploadTooLargeError as exc:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
     except UploadValidationError as exc:
