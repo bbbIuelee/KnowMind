@@ -7,6 +7,13 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from backend.env import PROJECT_ROOT, load_env
+from backend.indexing import (
+    DocumentLoader,
+    MilvusWriter,
+    ParentChunkStore,
+    embedding_service,
+    get_milvus_store,
+)
 
 
 load_env()
@@ -16,6 +23,14 @@ UPLOAD_DIR = DATA_DIR / "documents"
 UPLOAD_CHUNK_SIZE = 1024 * 1024
 MAX_UPLOAD_BYTES = int(os.getenv("DOCUMENT_UPLOAD_MAX_BYTES", str(20 * 1024 * 1024)))
 SUPPORTED_DOCUMENT_SUFFIXES = {".pdf", ".docx", ".xlsx"}
+
+document_loader = DocumentLoader()
+parent_chunk_store = ParentChunkStore()
+milvus_store = get_milvus_store()
+milvus_writer = MilvusWriter(
+    embedding=embedding_service,
+    milvus_store=milvus_store,
+)
 
 
 class UploadValidationError(ValueError):
