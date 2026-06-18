@@ -207,6 +207,69 @@ class MilvusStore:
 
         return self._run(query_rows)
 
+    def dense_retrieve(
+        self,
+        dense_embedding: list[float],
+        top_k: int = 5,
+        filter_expr: str = "",
+    ) -> list[dict]:
+        """使用稠密向量检索相似 L3 chunk，并返回标准化结果。"""
+        if not dense_embedding:
+            raise ValueError("稠密检索向量不能为空")
+        if top_k <= 0:
+            raise ValueError("稠密检索 top_k 必须大于 0")
+
+        output_fields = [
+            "text",
+            "filename",
+            "file_type",
+            "file_path",
+            "page_number",
+            "chunk_idx",
+            "chunk_id",
+            "parent_chunk_id",
+            "root_chunk_id",
+            "chunk_level",
+        ]
+
+        def search_rows(client: MilvusClient) -> list[list[dict]]:
+            """在当前连接中执行一次 dense-only 相似度检索。"""
+            if not client.has_collection(self.collection_name):
+                return []
+            return client.search(
+                collection_name=self.collection_name,
+                data=[dense_embedding],
+                anns_field="dense_embedding",
+                search_params={"metric_type": "IP", "params": {"ef": 64}},
+                limit=top_k,
+                output_fields=output_fields,
+                filter=filter_expr,
+                consistency_level="Strong",
+            )
+
+        results = self._run(search_rows)
+        formatted_results: list[dict] = []
+        for hits in results:
+            for hit in hits:
+                entity = hit.get("entity") or {}
+                formatted_results.append(
+                    {
+                        "id": hit.get("id"),
+                        "text": entity.get("text", ""),
+                        "filename": entity.get("filename", ""),
+                        "file_type": entity.get("file_type", ""),
+                        "file_path": entity.get("file_path", ""),
+                        "page_number": entity.get("page_number", 0),
+                        "chunk_idx": entity.get("chunk_idx", 0),
+                        "chunk_id": entity.get("chunk_id", ""),
+                        "parent_chunk_id": entity.get("parent_chunk_id", ""),
+                        "root_chunk_id": entity.get("root_chunk_id", ""),
+                        "chunk_level": entity.get("chunk_level", 0),
+                        "score": float(hit.get("distance", 0.0)),
+                    }
+                )
+        return formatted_results
+
     def describe_collection(self) -> dict:
         """返回当前 collection 的结构描述。"""
         return self._run(lambda client: client.describe_collection(self.collection_name))
