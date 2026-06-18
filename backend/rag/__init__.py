@@ -1,1 +1,6 @@
-"""KnowMind 包初始化文件。"""
+"""KnowMind 检索增强生成模块。"""
+
+from backend.rag.utils import retrieve_documents
+
+
+__all__ = ["retrieve_documents"]
